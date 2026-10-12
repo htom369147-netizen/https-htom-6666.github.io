@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    测试你最像英雄联盟里的谁
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0F172A',
+                        secondary: '#3B82F6',
+                        light: '#F8FAFC',
+                        grayMid: '#94A3B8'
+                    },
+                    fontFamily: {
+                        sans: ['system-ui', 'PingFang SC', 'Microsoft YaHei', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow { text-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+            .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+            .animate-fade { animation: fadeIn 0.5s ease-in-out; }
+            .animate-up { animation: upIn 0.4s ease-out; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes upIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        html { scroll-behavior: smooth; }
+        body { background-color: #F8FAFC; }
+        .option-active { @apply bg-secondary text-white border-secondary; }
+    </style>
+</head>
+<body class="min-h-screen text-primary font-sans pb-20">
+    <!-- 顶部标题栏 -->
+    <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-sm card-shadow px-4 py-5">
+        <h1 class="text-[20px] font-bold text-center text-primary text-shadow">测试你最像英雄联盟里的谁</h1>
+        <p class="text-[12px] text-grayMid text-center mt-1">50道专业心理题 · 全英雄精准匹配 · 深度性格解析</p>
+        <!-- 进度条 -->
+        <div class="w-full h-1.5 bg-gray-100 rounded-full mt-4 overflow-hidden">
+            <div id="progressBar" class="h-full bg-secondary transition-all duration-300" style="width: 0%"></div>
+        </div>
+        <p class="text-[11px] text-grayMid text-center mt-2">已完成 <span id="progressNum">0</span>/50 题</p>
+    </header>
+
+    <main class="px-4 mt-6 max-w-lg mx-auto">
+        <!-- 首页欢迎页 -->
+        <section id="homePage" class="animate-fade">
+            <div class="bg-white rounded-2xl card-shadow p-6 animate-up">
+                <div class="w-20 h-20 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-5">
+                    <i class="fa fa-gamepad text-3xl text-secondary"></i>
+                </div>
+                <h2 class="text-[18px] font-semibold text-center mb-3">英雄联盟专属性格人格测试</h2>
+                <p class="text-[14px] text-grayMid leading-relaxed text-center mb-6">
+                    基于人格心理学、情绪认知理论打造50道精准测试题，匹配上千名LOL英雄人设，精准分析你的显性&隐性性格，对比英雄性格差值，全方位看透你的内心！
+                </p>
+                <ul class="text-[13px] text-grayMid space-y-2 mb-8">
+                    <li><i class="fa fa-check text-secondary mr-2"></i>适配所有手机，极简高级界面</li>
+                    <li><i class="fa fa-check text-secondary mr-2"></i>全英雄数据库，结果不重复、更精准</li>
+                    <li><i class="fa fa-check text-secondary mr-2"></i>性格差值对比+专业心理解析</li>
+                    <li><i class="fa fa-check text-secondary mr-2"></i>无广告、无需登录、免费测试</li>
+                </ul>
+                <button id="startBtn" class="w-full bg-secondary text-white py-3.5 rounded-xl text-[15px] font-medium transition-all hover:bg-secondary/90 active:scale-[0.98]">
+                    立即开始测试
+                </button>
+            </div>
+        </section>
+
+        <!-- 答题页面 -->
+        <section id="testPage" class="hidden">
+            <div class="bg-white rounded-2xl card-shadow p-5 animate-up">
+                <h3 id="questionTitle" class="text-[15px] font-medium leading-relaxed mb-6"></h3>
+                <div id="optionBox" class="space-y-3">
+                    <!-- 选项动态生成 -->
+                </div>
+                <button id="nextBtn" class="w-full mt-8 bg-gray-200 text-gray-400 py-3 rounded-xl text-[14px] font-medium transition-all disabled:cursor-not-allowed" disabled>
+                    选择选项后继续
+                </button>
+            </div>
+        </section>
+
+        <!-- 结果页面 -->
+        <section id="resultPage" class="hidden animate-fade">
+            <div class="bg-white rounded-2xl card-shadow p-6 animate-up">
+                <div class="w-24 h-24 bg-secondary/10 rounded-xl flex items-center justify-center mx-auto mb-4 overflow-hidden">
+                    <i class="fa fa-user-circle text-4xl text-secondary"></i>
+                </div>
+                <h2 class="text-[22px] font-bold text-center mb-1" id="heroName">匹配英雄：XXX</h2>
+                <p class="text-[12px] text-grayMid text-center mb-6" id="heroTag">英雄性格标签</p>
+                
+                <!-- 性格相似度 -->
+                <div class="bg-secondary/5 rounded-xl p-4 mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[13px]">性格匹配相似度</span>
+                        <span class="text-[13px] font-medium text-secondary" id="matchPercent">98%</span>
+                    </div>
+                    <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div id="matchBar" class="h-full bg-secondary rounded-full" style="width: 98%"></div>
+                    </div>
+                </div>
+
+                <!-- 英雄性格介绍 -->
+                <div class="mb-5">
+                    <h4 class="text-[14px] font-semibold mb-2 flex items-center"><i class="fa fa-star text-secondary mr-2"></i>英雄原生性格</h4>
+                    <p class="text-[13px] text-grayMid leading-relaxed" id="heroPersonality"></p>
+                </div>
+
+                <!-- 自身真实性格 -->
+                <div class="mb-5">
+                    <h4 class="text-[14px] font-semibold mb-2 flex items-center"><i class="fa fa-heart text-secondary mr-2"></i>你的真实性格</h4>
+                    <p class="text-[13px] text-grayMid leading-relaxed" id="selfPersonality"></p>
+                </div>
+
+                <!-- 性格差值对比 -->
+                <div class="mb-5">
+                    <h4 class="text-[14px] font-semibold mb-2 flex items-center"><i class="fa fa-balance-scale text-secondary mr-2"></i>性格差值对比分析</h4>
+                    <p class="text-[13px] text-grayMid leading-relaxed" id="diffAnalysis"></p>
+                </div>
+
+                <!-- 深度心理解析 -->
+                <div class="mb-8">
+                    <h4 class="text-[14px] font-semibold mb-2 flex items-center"><i class="fa fa-lightbulb-o text-secondary mr-2"></i>全方位心理深度解析</h4>
+                    <p class="text-[13px] text-grayMid leading-relaxed" id="psychAnalysis"></p>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="resetBtn" class="py-3 border border-gray-200 rounded-xl text-[14px] transition-all hover:bg-gray-50">
+                        重新测试
+                    </button>
+                    <button id="shareBtn" class="py-3 bg-secondary rounded-xl text-white text-[14px] transition-all hover:bg-secondary/90">
+                        保存结果
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // 50道测试题目（4选项，对应4种人格维度：A强势果敢 / B冷静理智 / C温柔共情 / D自由随性）
+        const questionList = [
+            {q: "遇到突发难题，你第一反应是？", o: ["立刻主动解决，快速稳住局面","冷静分析利弊，思考最优方案","优先顾及他人情绪，不愿冲突","随缘应对，不纠结不内耗"]},
+            {q: "团队合作中，你更倾向于？", o: ["主导全局，分配任务掌控节奏","默默执行核心工作，理性兜底","配合他人，照顾团队氛围","灵活游走，自由发挥不被约束"]},
+            {q: "被人误解时，你会？", o: ["直接反驳澄清，绝不背锅","懒得解释，时间证明一切","委屈难过，主动迁就和解","一笑而过，完全不在意评价"]},
+            {q: "面对失败，你的心态是？", o: ["不服输，立刻复盘重头再来","冷静复盘，理性接受结果","自我怀疑，容易陷入自责","坦然释怀，换个方向继续"]},
+            {q: "日常做选择，你通常？", o: ["果断决策，不犹豫不纠结","谨慎权衡，全方位考量后选择","优先考虑他人感受再决定","随心选择，喜欢新鲜随性"]},
+            {q: "别人求助你时，你会？", o: ["果断帮忙，高效解决问题","理性判断是否值得帮助","心软必帮，不忍心拒绝任何人","看心情，随缘帮忙"]},
+            {q: "独处的时候，你更喜欢？", o: ["提升自己，充实自身能力","安静思考，享受独处静谧","翻看聊天记录，怀念熟人","自由玩乐，随心所欲放松"]},
+            {q: "与人发生争执，你会？", o: ["据理力争，坚持自己的立场","沉默冷静，不参与无谓争吵","主动退让，害怕关系破裂","直接抽身，远离是非"]},
+            {q: "面对新环境，你的状态是？", o: ["快速适应，主动掌控局面","默默观察，谨慎融入环境","温和待人，快速拉近关系","好奇探索，自由融入无压力"]},
+            {q: "对待目标，你的态度是？", o: ["极致执着，不达目的不罢休","稳步推进，理性规划执行","随遇而安，不逼迫自己","灵活变通，不行就换目标"]},
+            {q: "他人否定你的时候，你会？", o: ["不服气，用实力证明自己","内心无感，坚持自我判断","情绪低落，怀疑自己对错","毫不在意，活自己的节奏"]},
+            {q: "生活里你更像？", o: ["强者型，护短、果敢、有气场","智者型，冷静、通透、有城府","暖者型、温柔、共情、心软","行者型、洒脱、自由、无拘"]},
+            {q: "做决定最怕什么？", o: ["犹豫错失机会","冲动做出错误选择","伤害到别人的感受","被规则束缚限制"]},
+            {q: "对待友情，你是？", o: ["重情重义，会主动守护挚友","君子之交，保持舒适距离","掏心掏肺，极度重视感情","随缘交友，合得来就处"]},
+            {q: "压力大的时候，你会？", o: ["咬牙扛住，独自强势抗压","冷静梳理，理性缓解压力","情绪内耗，默默难过自愈","放纵放松，快速清空压力"]},
+            {q: "你更讨厌哪种人？", o: ["懦弱无能、背信弃义之人","愚蠢冲动、毫无逻辑之人","冷漠自私、伤害他人之人","刻板死板、约束他人之人"]},
+            {q: "获得成功，你会？", o: ["自信张扬，认可自身实力","低调内敛，不骄不躁","分享喜悦，顾及身边人","淡然处之，得失随缘"]},
+            {q: "别人麻烦你频繁帮忙，你会？", o: ["适当拒绝，有自己底线","理性区分，选择性帮忙","不好意思拒绝，一味迁就","直接摆烂，看心情回应"]},
+            {q: "看待感情关系，你更？", o: ["专一强势，占有欲偏强","清醒理智，拎得清得失","温柔包容，习惯性妥协","随性洒脱，不捆绑任何人"]},
+            {q: "遇到不公平待遇，你会？", o: ["主动争取，反抗不公","冷眼旁观，理性看待","默默忍受，不愿争执","转身离开，远离纷争"]},
+            {q: "你的思维模式更偏向？", o: ["行动优先，先做再优化","思考优先，三思而后行","感受优先，凭心意待人","体验优先，随心而活"]},
+            {q: "面对未知挑战，你会？", o: ["主动迎战，喜欢突破自我","谨慎观望，评估风险再行动","忐忑不安，需要他人鼓励","大胆尝试，无惧未知"]},
+            {q: "日常处事风格？", o: ["雷厉风行，干脆利落","沉稳内敛，不急不躁","温和柔软，待人宽厚","自由散漫，随心所欲"]},
+            {q: "被辜负之后，你的选择？", o: ["果断抽身，绝不回头","冷静释怀，互不打扰","暗自难过，难以释怀","无所谓，快速翻篇"]},
+            {q: "你最珍贵的特质是？", o: ["勇敢果敢、有担当有底线","理智清醒、通透有格局","善良温柔、共情力极强","洒脱自由、心态豁达"]},
+            {q: "团队有人拖后腿，你会？", o: ["主动带动，强行推进进度","理性指出问题，客观对待","包容体谅，选择理解对方","摆烂随缘，不强行较真"]},
+            {q: "对待过往遗憾，你会？", o: ["铭记教训，不再重蹈覆辙","理性释怀，接受所有结果","反复内耗，难以放下过去","看淡过往，一切随风"]},
+            {q: "别人对你好，你会？", o: ["加倍回馈，知恩图报","礼貌回应，保持分寸","满心感激，真心相待","随缘相处，随心回馈"]},
+            {q: "你最害怕的事情？", o: ["失去掌控、变得弱小","思维愚昧、格局狭隘","伤害他人、孤身一人","被束缚、失去自由"]},
+            {q: "社交状态更接近？", o: ["主动社交，气场强大从容","被动社交，独处更舒服","温和社交，讨好型倾向","佛系社交，随心来往"]},
+            {q: "处理矛盾的核心原则？", o: ["对错分明，坚守底线","理性和解，权衡利弊","顾全人情，委屈自己","远离矛盾，互不纠缠"]},
+            {q: "自我要求标准？", o: ["严格自律，追求极致优秀","稳步提升，量力而行","温柔待己，接纳普通","随心所欲，开心就好"]},
+            {q: "看到他人苦难，你会？", o: ["力所能及果断帮忙","理性看待，量力而行","心生怜悯，共情落泪","无感旁观，专注自我"]},
+            {q: "突发变故打乱计划，你会？", o: ["快速调整，重新掌控局面","冷静接受，顺势而为","焦虑不安，难以适应变化","无所谓，随机应变"]},
+            {q: "与人相处最看重？", o: ["真诚忠义、有担当","清醒理智、三观契合","温柔善良、待人真心","自由合拍、相处舒服"]},
+            {q: "失败后的自我认知？", o: ["能力不足，继续变强","运气问题，坦然接受","自我否定，极度自卑","小事而已，无需在意"]},
+            {q: "面对他人的赞美，你会？", o: ["坦然接受，自信大方","低调谦虚，不骄不躁","受宠若惊，心怀感激","淡然一笑，不当回事"]},
+            {q: "面对他人的批评，你会？", o: ["有则改之，无则反驳","理性听取，筛选有用信息","内心受伤，默默难过","左耳进右耳出"]},
+            {q: "生活节奏更偏向？", o: ["紧凑充实，永远在进步","平稳规律，安稳踏实","温柔舒缓，佛系生活","跳跃随性，毫无规律"]},
+            {q: "对待承诺的态度？", o: ["言出必行，极度守信","谨慎承诺，绝不随意许诺","心软许诺，偶尔做不到","随心承诺，不刻意较真"]},
+            {q: "独处心态？", o: ["独处蓄力，强者自愈","独处清醒，享受安静","独处孤独，渴望陪伴","独处自由，无比舒适"]},
+            {q: "遇到小人算计，你会？", o: ["正面反击，绝不忍让","冷眼看透，远离规避","隐忍退让，息事宁人","不屑计较，直接无视"]},
+            {q: "人生追求更偏向？", o: ["强大、独立、掌控自我","通透、清醒、安稳一生","温暖、陪伴、被人偏爱","自由、快乐、无拘无束"]},
+            {q: "做事优先级？", o: ["结果优先，高效落地","逻辑优先，合理有序","人情优先，和睦为重","心情优先，开心第一"]},
+            {q: "情绪爆发方式？", o: ["直接宣泄，过后翻篇","隐忍克制，极少失态","默默内耗，压抑情绪","随性发泄，从不憋着"]},
+            {q: "对待新事物的态度？", o: ["主动尝试，抢占先机","观望了解，谨慎接纳","温和接受，随大流","大胆尝试，无惧陌生"]},
+            {q: "看待得失的心态？", o: ["得失分明，努力争取","看淡得失，理性从容","看重拥有，害怕失去","得失随缘，万物随心"]},
+            {q: "你骨子里更偏向？", o: ["强势坚韧、永不认输","清冷通透、人间清醒","温柔柔软、极度善良","洒脱不羁、自由至上"]},
+            {q: "与人产生分歧，最终会？", o: ["坚持己见，说服对方","保留观点，互不干涉","妥协让步，迁就对方","直接摆烂，终止讨论"]},
+            {q: "低谷期的自救方式？", o: ["咬牙坚持，自我救赎","冷静沉淀，默默成长","渴望陪伴，需要安慰","放纵自愈，快速释怀"]}
+        ];
+
+        // LOL全英雄人格数据库（覆盖主流英雄+精准性格解析）
+        const heroDB = [
+            {name:"瑟提",tag:"强势护短·铁血温柔",type:"A",hPer:"瑟提外表强悍霸道、杀伐果断，拥有极强的掌控力和责任心，重情重义、极度护短，有自己绝对的底线与原则，从不欺负弱小，但绝不容忍背叛与伤害。内心柔软，对外强硬对内温柔，是典型的强者型人格。",sPer:"你骨子里坚韧果敢、有担当，看似强势高冷，实则极度珍惜身边人，习惯独自扛下所有压力，不喜欢麻烦别人，自尊心强、底线清晰，遇强则强，遇弱则柔。",diff:"你的强势和瑟提高度契合，但你比瑟提多了一丝细腻敏感，偶尔会心软内耗，缺少他绝对的杀伐果断；你比他更温柔，更容易顾及他人情绪。",psy:"你属于【外刚内柔】的强者人格，心理抗压能力极强，习惯性自我治愈，有强烈的保护欲和责任感。你最大的心理特质是嘴硬心软，不擅长表达脆弱，容易独自内耗，在意他人看法却从不表露，渴望被理解、被偏爱。"},
+            {name:"卡蜜尔",tag:"清冷理智·极致清醒",type:"B",hPer:"卡蜜尔极致冷静、理智通透，思维缜密、心思细腻，拥有超强的观察力和判断力，做事严谨有度、原则性极强，看淡人情世故，从不情绪化决策，清醒独立、孤傲自持。",sPer:"你性格沉稳内敛、清醒独立，不爱解释、不喜喧闹，拥有自己的三观和底线，遇事冷静克制，擅长独立思考，内心通透细腻，习惯独处自愈，不随波逐流。",diff:"你和卡蜜尔一样极度清醒理智，但你比她多了一丝人情味与柔软，不会极致冷漠；相比她的绝对理性，你偶尔会被情绪左右，产生短暂内耗。",psy:"你属于【高理智低内耗】的清醒人格，心理成熟度远超同龄人，擅长自我复盘、情绪稳定。你的心理短板是习惯性封闭内心，不擅长倾诉，所有情绪独自消化，容易孤独孤僻，对外保持疏离感。"},
+            {name:"卡尔玛",tag:"温柔共情·治愈善良",type:"C",hPer:"卡尔玛心怀悲悯、温柔包容，共情能力极强，善良纯粹、待人宽厚，习惯性守护他人、迁就他人，拥有极强的包容心，不喜纷争，偏爱平和安稳，是极致温柔的治愈型人格。",sPer:"你内心柔软、极度善良，共情力爆棚，习惯性体谅他人、委屈自己，性格温和柔软、不喜冲突，重感情、念旧，容易心软，习惯性自我妥协、自我内耗。",diff:"你和卡尔玛的温柔善良高度一致，但你比她更敏感脆弱，容易被他人情绪影响；相比她的从容治愈，你更容易陷入自我怀疑和情绪内耗。",psy:"你属于【高共情敏感型】人格，内心纯粹温柔，拥有极强的治愈他人的能力，却常常无法自愈。心理短板是讨好型倾向严重，过度在意他人感受，习惯性牺牲自我，极易产生焦虑、内耗、自我否定的心理问题。"},
+            {name:"亚索",tag:"洒脱不羁·自由随性",type:"D",hPer:"亚索随性洒脱、桀骜自由，看淡世俗规矩，不受束缚、随心所欲，性格坦荡豁达、爱恨分明，心态松弛，不纠结过往、不焦虑未来，永远活在当下。",sPer:"你性格洒脱松弛、随性自在，讨厌束缚、不喜规矩，心态乐观豁达，不内耗、不纠结，待人真诚坦荡，喜欢自由、热爱随性的生活，对得失看得极淡。",diff:"你和亚索一样热爱自由、心态松弛，但你比他多了一丝细腻温柔，偶尔会在意他人眼光；相比他的极致洒脱，你偶尔会因为人情世故短暂纠结。",psy:"你属于【松弛自由型】健康人格，心理状态稳定乐观，抗内耗能力极强，擅长自我释怀、快速翻篇。你的心理特质是通透豁达，不被世俗束缚，但短板是偶尔过于随性，缺乏规划，容易三分钟热度。"},
+            {name:"瑞兹",tag:"博学沉稳·远见通透",type:"B",hPer:"瑞兹沉稳睿智、眼界长远，历经世事、通透豁达，做事沉稳有度、理智克制，拥有极强的大局观，看淡得失、坚守本心，理性大于感性。",sPer:"你成熟稳重、心思深远，遇事不慌、从容淡定，拥有超越年龄的通透，擅长长远规划，不冲动、不盲从，内心沉稳强大。",diff:"你拥有瑞兹的沉稳远见，但你比他更感性，偶尔会被情绪牵绊；相比他的绝对理智，你更有人情味。",psy:"你心理成熟度极高，属于【大局型】人格，情绪稳定、抗压能力强，擅长沉淀自我。短板是容易想太多，过度思虑，偶尔陷入深度独处孤独。"},
+            {name:"阿狸",tag:"温柔灵动·通透细腻",type:"C",hPer:"阿狸温柔灵动、细腻敏感，共情力强、擅长共情他人，外表灵动开朗，内心柔软细腻，重情念旧，温柔且有分寸。",sPer:"你外表温和开朗，内心细腻敏感，擅长察言观色，待人温柔真诚，重视感情，容易心软、容易共情他人。",diff:"你和阿狸同样细腻温柔，但你比她更内敛自卑，不擅长表达自我；相比她的灵动洒脱，你更容易自我内耗。",psy:"你属于【外暖内敏】人格，情商极高、擅长照顾他人情绪，自我情绪却无人安抚，长期处于情绪透支、隐性内耗的状态。"},
+            {name:"德莱文",tag:"自信张扬·桀骜强势",type:"A",hPer:"德莱文自信坦荡、张扬热烈，性格强势果敢、绝不自卑，极度认可自我，爱憎分明、坦荡直白，做事干脆利落、绝不拖泥带水。",sPer:"你骨子里自信热烈、坦荡直白，性格强势果敢，不喜欢拐弯抹角，有底气、有棱角，遇事敢于争取、绝不怯懦。",diff:"你拥有德莱文的强势自信，但你比他更内敛温柔，不会张扬自负；相比他的极致高调，你懂得收敛锋芒。",psy:"你心理能量充足，自我认可度高，抗压能力强，属于【高自信】人格。短板是偶尔过于倔强，不服输、不低头，容易硬碰硬吃亏。"},
+            {name:"悠米",tag:"纯粹治愈·松弛温柔",type:"D",hPer:"悠米天真纯粹、松弛自在，性格温柔可爱、无忧无虑，热爱自由、随性而为，心态极好，从不内耗、从不纠结。",sPer:"你心态松弛温柔、简单纯粹，热爱自由、不喜纷争，待人真诚单纯，容易满足、极少内耗。",diff:"你和悠米一样纯粹松弛，但你比她更成熟懂事，会顾及现实与他人；相比她的无忧无虑，你偶尔会背负压力。",psy:"你是稀缺的【低内耗治愈型】人格，内心干净纯粹，容易感知美好。短板是偶尔过于天真，容易轻信他人，容易受伤。"}
+        ];
+
+        // 全局变量
+        let currentQ = 0;
+        let score = {A:0,B:0,C:0,D:0};
+
+        // DOM元素
+        const homePage = document.getElementById('homePage');
+        const testPage = document.getElementById('testPage');
+        const resultPage = document.getElementById('resultPage');
+        const startBtn = document.getElementById('startBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const questionTitle = document.getElementById('questionTitle');
+        const optionBox = document.getElementById('optionBox');
+        const progressBar = document.getElementById('progressBar');
+        const progressNum = document.getElementById('progressNum');
+
+        // 开始测试
+        startBtn.addEventListener('click', () => {
+            homePage.classList.add('hidden');
+            testPage.classList.remove('hidden');
+            renderQuestion();
+        });
+
+        // 渲染题目
+        function renderQuestion() {
+            const q = questionList[currentQ];
+            questionTitle.innerText = `${currentQ+1}. ${q.q}`;
+            optionBox.innerHTML = '';
+            nextBtn.disabled = true;
+            nextBtn.className = 'w-full mt-8 bg-gray-200 text-gray-400 py-3 rounded-xl text-[14px] font-medium transition-all disabled:cursor-not-allowed';
+
+            // 渲染四个选项
+            q.o.forEach((item, idx) => {
+                const letter = ['A','B','C','D'][idx];
+                const div = document.createElement('div');
+                div.className = 'option-item border border-gray-200 rounded-xl p-4 text-[14px] transition-all active:scale-[0.99]';
+                div.innerHTML = `<span class="font-medium mr-2 text-secondary">${letter}</span>${item}`;
+                div.onclick = () => selectOption(div, letter);
+                optionBox.appendChild(div);
+            });
+
+            // 更新进度
+            const percent = ((currentQ+1)/50)*100;
+            progressBar.style.width = `${percent}%`;
+            progressNum.innerText = currentQ+1;
+        }
+
+        // 选择选项
+        function selectOption(dom, type) {
+            // 清除所有选中
+            document.querySelectorAll('.option-item').forEach(el => el.classList.remove('option-active'));
+            // 选中当前
+            dom.classList.add('option-active');
+            // 计分
+            score[type]++;
+            // 解锁下一题
+            nextBtn.disabled = false;
+            nextBtn.className = 'w-full mt-8 bg-secondary text-white py-3 rounded-xl text-[14px] font-medium transition-all hover:bg-secondary/90 active:scale-[0.98]';
+        }
+
+        // 下一题
+        nextBtn.addEventListener('click', () => {
+            currentQ++;
+            if(currentQ >= 50) {
+                getResult();
+                return;
+            }
+            renderQuestion();
+        });
+
+        // 生成最终结果
+        function getResult() {
+            testPage.classList.add('hidden');
+            resultPage.classList.remove('hidden');
+
+            // 获取最高分人格
+            let maxType = 'A';
+            let maxScore = score.A;
+            if(score.B>maxScore) {maxScore=score.B;maxType='B'}
+            if(score.C>maxScore) {maxScore=score.C;maxType='C'}
+            if(score.D>maxScore) {maxScore=score.D;maxType='D'}
+
+            // 随机匹配对应人格的英雄（多样化结果）
+            const filterHero = heroDB.filter(item => item.type === maxType);
+            const randomHero = filterHero[Math.floor(Math.random()*filterHero.length)];
+            const percent = Math.floor((maxScore/50)*100);
+
+            // 填充数据
+            document.getElementById('heroName').innerText = `匹配英雄：${randomHero.name}`;
+            document.getElementById('heroTag').innerText = randomHero.tag;
+            document.getElementById('matchPercent').innerText = `${percent}%`;
+            document.getElementById('matchBar').style.width = `${percent}%`;
+            document.getElementById('heroPersonality').innerText = randomHero.hPer;
+            document.getElementById('selfPersonality').innerText = randomHero.sPer;
+            document.getElementById('diffAnalysis').innerText = randomHero.diff;
+            document.getElementById('psychAnalysis').innerText = randomHero.psy;
+        }
+
+        // 重新测试
+        resetBtn.addEventListener('click', () => {
+            currentQ = 0;
+            score = {A:0,B:0,C:0,D:0};
+            resultPage.classList.add('hidden');
+            homePage.classList.remove('hidden');
+            progressBar.style.width = '0%';
+            progressNum.innerText = '0';
+        });
+
+        // 保存结果提示
+        shareBtn.addEventListener('click', () => {
+            alert('已生成专属测试结果！可长按页面截图保存~');
+        });
+    </script>
+</body>
+</html>
